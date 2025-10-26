@@ -2,6 +2,27 @@ import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 
 export const notificationRouter = createTRPCRouter({
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          filter: z.enum(['pickup', 'reward', 'system']).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const where: any = { userId: ctx.user.id };
+
+      if (input?.filter) {
+        where.type = input.filter;
+      }
+
+      return await ctx.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      });
+    }),
+
   getAll: protectedProcedure
     .input(
       z
