@@ -14,35 +14,35 @@
     "api": "tsx src/server/elysia.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.19.1",
-    "@tanstack/react-query": "^5.56.2",
-    "@trpc/client": "^11.0.0-rc.502",
-    "@trpc/react-query": "^11.0.0-rc.502",
-    "@trpc/server": "^11.0.0-rc.502",
-    "elysia": "^1.1.16",
-    "next": "^14.2.13",
+    "@prisma/client": "^6.0.1",
+    "@tanstack/react-query": "^5.59.16",
+    "@trpc/client": "^11.0.0-rc.566",
+    "@trpc/react-query": "^11.0.0-rc.566",
+    "@trpc/server": "^11.0.0-rc.566",
+    "elysia": "^1.1.21",
+    "next": "^15.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
     "superjson": "^2.2.1",
     "zod": "^3.23.8",
-    "framer-motion": "^11.5.4",
-    "lucide-react": "^0.441.0",
+    "framer-motion": "^11.11.7",
+    "lucide-react": "^0.454.0",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.2"
+    "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
-    "@types/node": "^20.16.5",
-    "@types/react": "^18.3.8",
-    "@types/react-dom": "^18.3.0",
+    "@types/node": "^22.8.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.13",
+    "eslint": "^9.14.0",
+    "eslint-config-next": "^15.0.3",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
-    "prisma": "^5.19.1",
-    "tailwindcss": "^3.4.12",
+    "prisma": "^6.0.1",
+    "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.3"
   }
 }

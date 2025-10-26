@@ -1,15 +1,16 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
-import { prisma } from './db';
+import { prisma } from '../db';
 
-export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  const { req, res } = opts;
+export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
+  const { req } = opts;
 
-  // Get user from session/cookie
-  // For now, we'll use a simple approach with a cookie
-  const userId = req.cookies.userId ? parseInt(req.cookies.userId) : null;
+  // Get user from cookie/header
+  // For now, we'll use a simple approach with headers
+  const userIdHeader = req.headers.get('x-user-id');
+  const userId = userIdHeader ? parseInt(userIdHeader) : null;
   
   let user = null;
   if (userId) {
@@ -22,7 +23,6 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
     prisma,
     user,
     req,
-    res,
   };
 };
 
