@@ -1,7 +1,31 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Layout } from '~/components/Layout';
+import { useAuth } from '~/contexts/AuthContext';
 import Head from 'next/head';
 
 export default function Home() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Head>
@@ -10,7 +34,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Layout userType="personal" userName="Guest">
+      <Layout userType={user.type} userName={user.name}>
         <div className="container mx-auto px-4 py-8">
           <div className="flex min-h-[60vh] flex-col items-center justify-center">
             <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-4xl bg-gradient-to-br from-accent to-success shadow-float">
