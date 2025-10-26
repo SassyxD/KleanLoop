@@ -1,16 +1,16 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
 import { prisma } from '../db';
 
-export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
+export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { req } = opts;
 
   // Get user from cookie/header
-  // For now, we'll use a simple approach with headers
-  const userIdHeader = req.headers.get('x-user-id');
-  const userId = userIdHeader ? parseInt(userIdHeader) : null;
+  // For now, we'll use a simple approach
+  const userIdCookie = req.cookies['userId'];
+  const userId = userIdCookie ? parseInt(userIdCookie) : null;
   
   let user = null;
   if (userId) {
