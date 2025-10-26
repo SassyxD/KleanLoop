@@ -50,6 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     document.cookie = `userId=${userData.id}; path=/; max-age=86400`;
     document.cookie = `userType=${userData.type}; path=/; max-age=86400`;
+    
+    // Force a small delay to ensure cookies are set
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   const logout = () => {

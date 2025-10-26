@@ -4,10 +4,12 @@ import Head from 'next/head';
 import { motion } from 'framer-motion';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { api } from '~/utils/api';
+import { useAuth } from '~/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,12 +20,21 @@ export default function Login() {
       document.cookie = `userId=${data.user.id}; path=/; max-age=86400`; // 24 hours
       document.cookie = `userType=${data.user.type}; path=/; max-age=86400`;
       
+      // Update auth context
+      login({
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        type: data.user.type as 'personal' | 'corporate',
+        reputationPoints: data.user.reputationPoints,
+        tier: data.user.tier,
+        companyName: data.user.companyName || undefined,
+      });
+      
       toast.success(`ยินดีต้อนรับ, ${data.user.name}!`);
       
       // Redirect to home
-      setTimeout(() => {
-        router.push('/');
-      }, 500);
+      router.push('/');
     },
     onError: (error) => {
       toast.error(error.message);
