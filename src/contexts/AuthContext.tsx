@@ -59,9 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    document.cookie = 'userId=; path=/; max-age=0';
-    document.cookie = 'userType=; path=/; max-age=0';
-    router.push('/login');
+    // Clear cookies with proper domain/path
+    document.cookie = 'userId=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'userType=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    
+    // Force full page reload to clear all state and caches
+    window.location.href = '/login';
   };
 
   return (
