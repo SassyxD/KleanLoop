@@ -31,6 +31,7 @@ export const transactionRouter = createTRPCRouter({
       z.object({
         weight: z.number().positive(),
         photoUrl: z.string(),
+        plasticType: z.enum(['PET', 'HDPE', 'LDPE', 'PP', 'mixed']).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,8 +51,8 @@ export const transactionRouter = createTRPCRouter({
         });
       }
 
-      // Detect plastic type (mock AI)
-      const plasticType = detectPlasticType(input.photoUrl);
+  // Use provided plasticType or detect from photo (mock AI)
+  const plasticType = input.plasticType ?? detectPlasticType(input.photoUrl);
 
       // Calculate price
       const pricing = calculatePrice(

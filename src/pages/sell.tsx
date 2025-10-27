@@ -20,6 +20,7 @@ export default function Sell() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [weight, setWeight] = useState('');
   const [detectedType, setDetectedType] = useState<keyof typeof PLASTIC_PRICES>('PET');
+  const [selectedType, setSelectedType] = useState<keyof typeof PLASTIC_PRICES>('PET');
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const createOrderMutation = api.transaction.createSellOrder.useMutation({
@@ -67,6 +68,7 @@ export default function Sell() {
         // Mock AI detection
         const types: Array<keyof typeof PLASTIC_PRICES> = ['PET', 'HDPE', 'LDPE', 'PP'];
         setDetectedType(types[Math.floor(Math.random() * types.length)]);
+        setSelectedType(types[Math.floor(Math.random() * types.length)]);
         setStep(2);
       };
       reader.readAsDataURL(file);
@@ -82,10 +84,30 @@ export default function Sell() {
   };
 
   const handleConfirm = () => {
-    createOrderMutation.mutate({
-      weight: weightNum,
-      photoUrl: photoPreview || '',
-    });
+    // upload image to server first to avoid sending large base64 over tRPC
+    (async () => {
+      try {
+        let photoUrl = '';
+        if (photoPreview) {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: photoPreview }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || 'Upload failed');
+          photoUrl = data.url;
+        }
+
+        createOrderMutation.mutate({
+          weight: weightNum,
+          photoUrl,
+          plasticType: selectedType,
+        });
+      } catch (err: any) {
+        toast.error(err?.message || 'การอัปโหลดรูปผิดพลาด');
+      }
+    })();
   };
 
   const resetForm = () => {
@@ -188,11 +210,30 @@ export default function Sell() {
                         alt="Preview"
                         className="h-48 w-full rounded-2xl object-cover"
                       />
-                      <div className="mt-3 flex items-center justify-between rounded-2xl bg-accent/10 p-3">
-                        <span className="text-sm text-gray-700">ตรวจพบ:</span>
-                        <span className="font-semibold text-accent">
-                          {PLASTIC_PRICES[detectedType].nameTH}
-                        </span>
+                      <div className="mt-3 space-y-3">
+                        <div className="flex items-center justify-between rounded-2xl bg-accent/10 p-3">
+                          <span className="text-sm text-gray-700">ตรวจพบ:</span>
+                          <span className="font-semibold text-accent">
+                            {PLASTIC_PRICES[detectedType].nameTH}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">เลือกประเภทวัสดุ (หากไม่ตรง)</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(Object.keys(PLASTIC_PRICES) as Array<keyof typeof PLASTIC_PRICES>).map((k) => (
+                              <button
+                                key={k}
+                                onClick={() => setSelectedType(k)}
+                                className={`rounded-2xl border px-3 py-2 text-sm transition-all ${
+                                  selectedType === k ? 'bg-accent text-white' : 'bg-white hover:bg-gray-50'
+                                }`}
+                              >
+                                {PLASTIC_PRICES[k].nameTH}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -314,7 +355,7 @@ export default function Sell() {
                   <div className="mb-6 space-y-3 rounded-2xl bg-gray-50 p-4">
                     <div className="flex justify-between">
                       <span className="text-gray-600">ประเภท:</span>
-                      <span className="font-semibold">{PLASTIC_PRICES[detectedType].nameTH}</span>
+                      <span className="font-semibold">{PLASTIC_PRICES[selectedType].nameTH}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">น้ำหนัก:</span>
