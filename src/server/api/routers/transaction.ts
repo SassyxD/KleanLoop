@@ -1,14 +1,32 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '../trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 import { detectPlasticType, calculatePrice } from '~/lib/pricing';
 import { TIER_CONFIG, getUserTier } from '~/lib/tier';
 import { TRPCError } from '@trpc/server';
 
 export const transactionRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    // If user is logged in, show only their transactions
+    // If admin (no user context), show all transactions
+    if (ctx.user) {
+      return await ctx.prisma.transaction.findMany({
+        where: { userId: ctx.user.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    
+    // Admin view: all transactions
     return await ctx.prisma.transaction.findMany({
-      where: { userId: ctx.user.id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
   }),
 
@@ -167,6 +185,88 @@ export const transactionRouter = createTRPCRouter({
           title: 'ยกเลิกรายการ ⚠️',
           description: 'คุณถูกหักคะแนน 50 แต้มจากการยกเลิก',
           type: 'system',
+        },
+      });
+
+      return updatedTransaction;
+    }),
+
+  approve: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const transaction = await ctx.prisma.transaction.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!transaction) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      if (transaction.status !== 'pending') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'สามารถอนุมัติได้เฉพาะรายการที่รอดำเนินการเท่านั้น',
+        });
+      }
+
+      // Update transaction status
+      const updatedTransaction = await ctx.prisma.transaction.update({
+        where: { id: input.id },
+        data: { status: 'completed' },
+      });
+
+      // Create notification
+      await ctx.prisma.notification.create({
+        data: {
+          userId: transaction.userId,
+          title: 'การขายสำเร็จ ✅',
+          description: `${transaction.plasticType} ${transaction.weight} kg - ${transaction.totalAmount}฿`,
+          type: 'reward',
+        },
+      });
+
+      return updatedTransaction;
+    }),
+
+  reject: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const transaction = await ctx.prisma.transaction.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!transaction) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      if (transaction.status !== 'pending') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'สามารถปฏิเสธได้เฉพาะรายการที่รอดำเนินการเท่านั้น',
+        });
+      }
+
+      // Update transaction status
+      const updatedTransaction = await ctx.prisma.transaction.update({
+        where: { id: input.id },
+        data: { status: 'cancelled' },
+      });
+
+      // Create notification
+      await ctx.prisma.notification.create({
+        data: {
+          userId: transaction.userId,
+          title: 'รายการถูกปฏิเสธ ❌',
+          description: `${transaction.plasticType} ${transaction.weight} kg - กรุณาติดต่อเจ้าหน้าที่`,
+          type: 'system',
+        },
+      });
+
+      // Refund points if applicable
+      await ctx.prisma.user.update({
+        where: { id: transaction.userId },
+        data: {
+          reputationPoints: { decrement: Math.floor(transaction.weight * 10) },
         },
       });
 

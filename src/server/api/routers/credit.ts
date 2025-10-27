@@ -1,13 +1,30 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure } from '../trpc';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 import { CREDIT_PACKAGES } from '~/lib/pricing';
 import { TRPCError } from '@trpc/server';
 
 export const creditRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    // If user is logged in, show only their credits
+    if (ctx.user) {
+      return await ctx.prisma.credit.findMany({
+        where: { userId: ctx.user.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    
+    // Admin view: all credits
     return await ctx.prisma.credit.findMany({
-      where: { userId: ctx.user.id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
   }),
 
