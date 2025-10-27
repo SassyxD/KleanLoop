@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
 import { detectPlasticType, calculatePrice } from '~/lib/pricing';
-import { TIER_CONFIG } from '~/lib/tier';
+import { TIER_CONFIG, getUserTier } from '~/lib/tier';
 import { TRPCError } from '@trpc/server';
 
 export const transactionRouter = createTRPCRouter({
@@ -89,12 +89,32 @@ export const transactionRouter = createTRPCRouter({
 
       // Award points (10 per kg)
       const pointsEarned = Math.floor(input.weight * 10);
-      await ctx.prisma.user.update({
+      const updatedUser = await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: {
           reputationPoints: { increment: pointsEarned },
         },
       });
+
+      // Check and update tier based on new points
+      const newTier = getUserTier(updatedUser.reputationPoints);
+      if (newTier !== updatedUser.tier) {
+        await ctx.prisma.user.update({
+          where: { id: ctx.user.id },
+          data: { tier: newTier },
+        });
+
+        // Create notification for tier upgrade
+        const tierInfo = TIER_CONFIG[newTier as keyof typeof TIER_CONFIG];
+        await ctx.prisma.notification.create({
+          data: {
+            userId: ctx.user.id,
+            title: `ยินดีด้วย! คุณเลื่อนระดับเป็น ${tierInfo.nameTH} 🎉`,
+            description: `คุณได้รับสิทธิประโยชน์เพิ่มเติม: ขายขั้นต่ำ ${tierInfo.minWeight} kg, โบนัส ${Math.round((tierInfo.priceMultiplier - 1) * 100)}%`,
+            type: 'reward',
+          },
+        });
+      }
 
       return transaction;
     }),
@@ -124,12 +144,21 @@ export const transactionRouter = createTRPCRouter({
       });
 
       // Deduct points (-50 for cancellation)
-      await ctx.prisma.user.update({
+      const updatedUser = await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: {
           reputationPoints: { decrement: 50 },
         },
       });
+
+      // Check if tier should be downgraded
+      const newTier = getUserTier(updatedUser.reputationPoints);
+      if (newTier !== updatedUser.tier) {
+        await ctx.prisma.user.update({
+          where: { id: ctx.user.id },
+          data: { tier: newTier },
+        });
+      }
 
       // Create notification
       await ctx.prisma.notification.create({
