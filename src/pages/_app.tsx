@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import superjson from 'superjson';
+import { Analytics } from '@vercel/analytics/next';
 import { api } from '~/utils/api';
 import { AuthProvider } from '~/contexts/AuthContext';
 import '~/styles/globals.css';
@@ -31,6 +32,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Component {...pageProps} />
+          <Analytics />
           <Toaster
             position="top-center"
             toastOptions={{
