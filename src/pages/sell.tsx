@@ -83,30 +83,12 @@ export default function Sell() {
   };
 
   const handleConfirm = () => {
-    // upload image to server first to avoid sending large base64 over tRPC
-    (async () => {
-      try {
-        let photoUrl = '';
-        if (photoPreview) {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: photoPreview }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.error || 'Upload failed');
-          photoUrl = data.url;
-        }
-
-        createOrderMutation.mutate({
-          weight: weightNum,
-          photoUrl,
-          plasticType: selectedType,
-        });
-      } catch (err: any) {
-        toast.error(err?.message || 'การอัปโหลดรูปผิดพลาด');
-      }
-    })();
+    // Store base64 directly in database (works on Vercel serverless)
+    createOrderMutation.mutate({
+      weight: weightNum,
+      photoUrl: photoPreview || '',
+      plasticType: selectedType,
+    });
   };
 
   const resetForm = () => {
