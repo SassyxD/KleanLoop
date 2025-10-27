@@ -21,7 +21,6 @@ export default function Sell() {
   const [weight, setWeight] = useState('');
   const [detectedType, setDetectedType] = useState<keyof typeof PLASTIC_PRICES>('PET');
   const [selectedType, setSelectedType] = useState<keyof typeof PLASTIC_PRICES>('PET');
-  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const createOrderMutation = api.transaction.createSellOrder.useMutation({
     onSuccess: () => {
@@ -80,7 +79,7 @@ export default function Sell() {
       toast.error(`น้ำหนักขั้นต่ำสำหรับระดับ ${tierInfo.nameTH} คือ ${tierInfo.minWeight} kg`);
       return;
     }
-    setShowConfirmation(true);
+    setStep(3);
   };
 
   const handleConfirm = () => {
@@ -114,7 +113,6 @@ export default function Sell() {
     setStep(1);
     setPhotoPreview(null);
     setWeight('');
-    setShowConfirmation(false);
   };
 
   return (
@@ -291,66 +289,25 @@ export default function Sell() {
               </motion.div>
             )}
 
-            {/* Step 4: Success */}
-            {step === 4 && (
+            {/* Step 3: Confirmation */}
+            {step === 3 && pricing && (
               <motion.div
-                key="step4"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
                 className="mx-auto max-w-lg"
               >
-                <div className="rounded-3xl bg-white p-8 text-center shadow-float">
-                  <CheckCircle className="mx-auto mb-4 h-20 w-20 text-success" />
-                  <h2 className="mb-2 text-2xl font-bold text-gray-800">
-                    สำเร็จ!
-                  </h2>
-                  <p className="mb-6 text-gray-600">
-                    พนักงานกำลังเดินทางไปรับของ<br />
-                    ประมาณ 2-3 ชั่วโมง
-                  </p>
-                  <button
-                    onClick={() => router.push('/notifications')}
-                    className="w-full rounded-2xl bg-accent py-3 font-semibold text-white transition-all hover:bg-accent/90"
-                  >
-                    ดูสถานะ
-                  </button>
-                  <button
-                    onClick={resetForm}
-                    className="mt-3 w-full rounded-2xl border-2 border-gray-300 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50"
-                  >
-                    ขายอีกครั้ง
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="rounded-3xl bg-white p-8 shadow-float">
+                  <h2 className="mb-6 text-2xl font-bold text-gray-800 text-center">ยืนยันการขาย</h2>
 
-          {/* Confirmation Modal */}
-          <AnimatePresence>
-            {showConfirmation && pricing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                onClick={() => setShowConfirmation(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.9, y: 20 }}
-                  animate={{ scale: 1, y: 0 }}
-                  exit={{ scale: 0.9, y: 20 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full max-w-md rounded-3xl bg-white p-6 shadow-float"
-                >
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-gray-800">ยืนยันการขาย</h3>
-                    <button
-                      onClick={() => setShowConfirmation(false)}
-                      className="rounded-full p-1 hover:bg-gray-100"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+                  {photoPreview && (
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="mb-4 h-32 w-full rounded-2xl object-cover"
+                    />
+                  )}
 
                   <div className="mb-6 space-y-3 rounded-2xl bg-gray-50 p-4">
                     <div className="flex justify-between">
@@ -387,10 +344,10 @@ export default function Sell() {
 
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setShowConfirmation(false)}
+                      onClick={() => setStep(2)}
                       className="flex-1 rounded-2xl border-2 border-gray-300 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50"
                     >
-                      ยกเลิก
+                      ย้อนกลับ
                     </button>
                     <button
                       onClick={handleConfirm}
@@ -400,7 +357,40 @@ export default function Sell() {
                       {createOrderMutation.isPending ? 'กำลังสร้าง...' : 'ยืนยัน'}
                     </button>
                   </div>
-                </motion.div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4: Success */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mx-auto max-w-lg"
+              >
+                <div className="rounded-3xl bg-white p-8 text-center shadow-float">
+                  <CheckCircle className="mx-auto mb-4 h-20 w-20 text-success" />
+                  <h2 className="mb-2 text-2xl font-bold text-gray-800">
+                    สำเร็จ!
+                  </h2>
+                  <p className="mb-6 text-gray-600">
+                    พนักงานกำลังเดินทางไปรับของ<br />
+                    ประมาณ 2-3 ชั่วโมง
+                  </p>
+                  <button
+                    onClick={() => router.push('/notifications')}
+                    className="w-full rounded-2xl bg-accent py-3 font-semibold text-white transition-all hover:bg-accent/90"
+                  >
+                    ดูสถานะ
+                  </button>
+                  <button
+                    onClick={resetForm}
+                    className="mt-3 w-full rounded-2xl border-2 border-gray-300 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-50"
+                  >
+                    ขายอีกครั้ง
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
