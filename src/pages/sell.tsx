@@ -61,14 +61,33 @@ export default function Sell() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Compress image before storing
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-        // Mock AI detection
-        const types: Array<keyof typeof PLASTIC_PRICES> = ['PET', 'HDPE', 'LDPE', 'PP'];
-        setDetectedType(types[Math.floor(Math.random() * types.length)]);
-        setSelectedType(types[Math.floor(Math.random() * types.length)]);
-        setStep(2);
+        img.src = reader.result as string;
+        img.onload = () => {
+          // Resize to max 800px width while maintaining aspect ratio
+          const maxWidth = 800;
+          const scale = maxWidth / img.width;
+          canvas.width = maxWidth;
+          canvas.height = img.height * scale;
+          
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to JPEG with 0.7 quality (much smaller size)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setPhotoPreview(compressedBase64);
+          
+          // Mock AI detection
+          const types: Array<keyof typeof PLASTIC_PRICES> = ['PET', 'HDPE', 'LDPE', 'PP'];
+          setDetectedType(types[Math.floor(Math.random() * types.length)]);
+          setSelectedType(types[Math.floor(Math.random() * types.length)]);
+          setStep(2);
+        };
       };
       reader.readAsDataURL(file);
     }
